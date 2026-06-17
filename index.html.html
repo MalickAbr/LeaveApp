@@ -1,0 +1,1631 @@
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leave Management</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:        #f7f8fa;
+    --surface:   #ffffff;
+    --navy:      #1b2d5b;
+    --navy-soft: #2e4a8a;
+    --amber:     #2188a0;
+    --amber-bg:  #d4eff5;
+    --text:      #3a3f52;
+    --text2:     #7c8298;
+    --text3:     #b0b5c8;
+    --border:    rgba(0,0,0,0.07);
+    --border-md: rgba(0,0,0,0.11);
+    --pill-purple-bg:#e8e6f9; --pill-purple-txt:#6b55b8;
+    --pill-mint-bg:  #d6f0e4; --pill-mint-txt:  #2e8f62;
+    --pill-teal-bg:  #d4eff5; --pill-teal-txt:  #2188a0;
+    --pill-pink-bg:  #fce8f2; --pill-pink-txt:  #b8538a;
+    --danger-text: #b8538a;
+    --r:    8px;
+    --r-lg: 12px;
+    --font: 'Inter', sans-serif;
+    --mono: 'Consolas', 'Courier New', monospace;
+  }
+  body { font-family:var(--font); background:var(--bg); color:var(--text); font-size:13px; min-height:100vh; }
+
+  /* ── SCREEN SYSTEM ── */
+  .screen { display:none; }
+  .screen.active { display:flex; }
+
+  /* ── LOGIN ── */
+  #login-screen { align-items:center; justify-content:center; min-height:100vh; padding:1rem; }
+  .login-card {
+    background:var(--surface); border:1px solid var(--border-md); border-radius:var(--r-lg);
+    padding:2rem; width:100%; max-width:360px; box-shadow:0 2px 16px rgba(0,0,0,0.07);
+  }
+  .login-logo { font-size:20px; font-weight:600; color:var(--navy); margin-bottom:4px; }
+  .login-sub  { font-size:13px; color:var(--text3); margin-bottom:1.5rem; }
+  .field { margin-bottom:1rem; }
+  .field label { display:block; font-size:12px; color:var(--text2); margin-bottom:5px; font-weight:500; }
+  .field input {
+    width:100%; padding:9px 11px; border:1px solid var(--border-md); border-radius:var(--r);
+    background:var(--surface); color:var(--text); font-size:14px; font-family:var(--font); transition:border-color 0.15s;
+  }
+  .field input:focus { outline:none; border-color:var(--amber); }
+  .login-btn {
+    width:100%; padding:10px; background:var(--navy); color:#fff; border:none;
+    border-radius:var(--r); font-size:14px; font-weight:500; cursor:pointer;
+    margin-top:4px; font-family:var(--font); transition:background 0.15s;
+  }
+  .login-btn:hover { background:var(--navy-soft); }
+  .login-error { font-size:12px; color:var(--danger-text); margin-top:8px; min-height:16px; }
+  .setup-divider { display:flex; align-items:center; gap:8px; margin:1.25rem 0 1rem; }
+  .setup-divider::before,.setup-divider::after { content:''; flex:1; height:1px; background:var(--border); }
+  .setup-divider span { font-size:11px; color:var(--text3); white-space:nowrap; }
+  .setup-btn {
+    width:100%; padding:9px; background:transparent; color:var(--pill-mint-txt);
+    border:1px dashed #6aaa3a; border-radius:var(--r); font-size:13px; font-weight:500;
+    cursor:pointer; transition:background 0.15s; font-family:var(--font);
+  }
+  .setup-btn:hover { background:var(--pill-mint-bg); }
+
+  /* ── APP ── */
+  #app-screen { flex-direction:column; min-height:100vh; }
+
+  /* ── TOP NAV ── */
+  .topbar {
+    background:var(--surface); border-bottom:1px solid var(--border);
+    padding:0 32px; height:58px; display:flex; align-items:center;
+    justify-content:space-between; position:sticky; top:0; z-index:20;
+  }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .brand-icon {
+    width:34px; height:34px; border-radius:9px; background:var(--navy);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .brand-icon svg { width:16px; height:16px; fill:none; stroke:#fff; stroke-width:1.8; stroke-linecap:round; }
+  .brand-name { font-size:15px; font-weight:600; color:var(--navy); letter-spacing:-0.02em; }
+  .brand-sub  { font-size:11px; color:var(--text3); margin-top:1px; }
+  .nav-right  { display:flex; align-items:center; gap:12px; }
+  .avatar {
+    width:32px; height:32px; border-radius:50%; background:var(--amber-bg);
+    border:1.5px solid var(--amber); display:flex; align-items:center;
+    justify-content:center; font-size:11px; font-weight:600; color:var(--amber);
+  }
+  .nav-name { font-size:13px; font-weight:500; color:var(--amber); }
+  .nav-role { font-size:11px; color:var(--text3); }
+  .btn-ghost {
+    padding:6px 13px; border:1px solid var(--border-md); border-radius:6px;
+    background:transparent; font-size:12px; font-family:var(--font);
+    color:var(--text2); cursor:pointer; transition:background 0.15s;
+  }
+  .btn-ghost:hover { background:var(--bg); }
+
+  /* ── BODY ── */
+  .body { padding:28px 32px; max-width:1200px; margin:0 auto; flex:1; }
+
+  /* ── PAGE HEADER ── */
+  .page-header { margin-bottom:22px; }
+  .page-header h1 { font-size:22px; font-weight:600; color:var(--navy); letter-spacing:-0.03em; }
+  .page-header p  { font-size:13px; color:var(--text3); margin-top:3px; }
+
+  /* ── NOTICES ── */
+  .setup-notice {
+    display:flex; align-items:flex-start; gap:8px; padding:10px 14px;
+    background:#fdf3e0; border-radius:var(--r); border-left:3px solid #e8a838;
+    font-size:12px; color:#633806; margin-bottom:18px; line-height:1.5;
+  }
+  .readonly-notice {
+    display:flex; align-items:flex-start; gap:8px; padding:9px 14px;
+    background:var(--bg); border-radius:var(--r); border-left:3px solid var(--border-md);
+    font-size:12px; color:var(--text2); margin-bottom:18px; line-height:1.5;
+  }
+
+
+
+  /* ── MAIN CARD ── */
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--r-lg); overflow:hidden; }
+  .card-head {
+    padding:16px 22px; display:flex; align-items:center; justify-content:space-between;
+    border-bottom:1px solid var(--border);
+  }
+  .card-head h2 { font-size:14px; font-weight:600; color:var(--navy); }
+  .card-head p  { font-size:12px; color:var(--text3); margin-top:2px; }
+  .card-actions { display:flex; align-items:center; gap:8px; }
+  .search-box {
+    display:flex; align-items:center; gap:7px; background:var(--bg);
+    border:1px solid var(--border-md); border-radius:7px; padding:7px 12px;
+  }
+  .search-box svg { width:13px; height:13px; stroke:var(--text3); flex-shrink:0; }
+  .search-box input {
+    background:none; border:none; outline:none;
+    font-size:12px; font-family:var(--font); color:var(--text); width:180px;
+  }
+  .search-box input::placeholder { color:var(--text3); }
+  .btn-primary {
+    display:flex; align-items:center; gap:6px; padding:8px 14px;
+    background:var(--navy); color:#fff; border:none; border-radius:7px;
+    font-size:12px; font-weight:500; font-family:var(--font); cursor:pointer; transition:background 0.15s;
+  }
+  .btn-primary:hover { background:var(--navy-soft); }
+  .btn-primary:disabled { opacity:0.38; cursor:not-allowed; }
+  .btn-outline {
+    display:flex; align-items:center; gap:6px; padding:8px 14px;
+    background:transparent; border:1px solid var(--border-md); border-radius:7px;
+    font-size:12px; font-family:var(--font); color:var(--text2); cursor:pointer; transition:background 0.15s;
+  }
+  .btn-outline:hover { background:var(--bg); }
+
+  /* ── TABLE ── */
+  table { width:100%; border-collapse:collapse; }
+  thead tr { border-bottom:1px solid var(--border); }
+  th {
+    padding:10px 18px; font-size:10.5px; font-weight:500; color:var(--text3);
+    text-transform:uppercase; letter-spacing:0.07em; text-align:left;
+    white-space:nowrap; cursor:pointer; user-select:none;
+  }
+  th:hover { color:var(--text2); }
+  th.r { text-align:right; }
+  th.sort-asc::after  { content:' ↑'; }
+  th.sort-desc::after { content:' ↓'; }
+  tbody tr { border-bottom:1px solid var(--border); transition:background 0.1s; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody tr:hover { background:#fafbfd; }
+  tr.me-row { background:rgba(33,136,160,0.04); }
+  tr.me-row:hover { background:rgba(33,136,160,0.08); }
+  td { padding:13px 18px; font-size:13px; color:var(--text); vertical-align:middle; }
+
+  .name-cell { display:flex; align-items:center; gap:10px; }
+  .ini {
+    width:28px; height:28px; border-radius:50%; background:var(--bg);
+    border:1px solid var(--border-md); display:flex; align-items:center; justify-content:center;
+    font-size:10px; font-weight:600; color:var(--text2); flex-shrink:0;
+  }
+  .emp-name { font-weight:500; color:var(--navy); font-size:13px; }
+  .you { font-size:10px; color:var(--text3); margin-left:5px; font-weight:400; }
+
+  .badge { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:500; }
+  .b-staff   { background:var(--pill-teal-bg);   color:var(--pill-teal-txt); }
+  .b-manager { background:var(--pill-purple-bg); color:var(--pill-purple-txt); }
+  .b-admin   { background:var(--pill-mint-bg);   color:var(--pill-mint-txt); }
+  td.muted { color:var(--text2); font-size:12.5px; }
+  .accrual-val { color:var(--text2); font-size:12.5px; }
+
+  .date-cell { display:flex; align-items:center; gap:6px; }
+  .date-input {
+    padding:4px 9px; border:1px solid var(--border-md); border-radius:var(--r);
+    background:var(--bg); color:var(--text); font-size:12px; font-family:var(--font); cursor:pointer;
+  }
+  .date-input:focus { outline:none; border-color:var(--amber); }
+  .reset-btn {
+    padding:3px 8px; border:1px solid var(--border-md); border-radius:var(--r);
+    background:transparent; color:var(--text3); font-size:11px; cursor:pointer;
+    white-space:nowrap; transition:all 0.12s; font-family:var(--font);
+  }
+  .reset-btn:hover { background:#fdf3e0; color:#633806; border-color:#e8a838; }
+  .reset-btn[style*="display:none"] { display:none !important; }
+
+  .date-chip {
+    display:inline-flex; align-items:center; gap:5px; font-size:12px; color:var(--text2);
+    background:var(--bg); padding:4px 9px; border-radius:6px; border:1px solid var(--border);
+  }
+  .date-chip svg { width:11px; height:11px; stroke:var(--text3); flex-shrink:0; }
+
+  .avail { text-align:right; font-size:13px; font-weight:500; }
+  .av-pos { color:#2e8f62; }
+  .av-low { color:#6b55b8; }
+  .av-neg { color:#b8538a; }
+
+  .empty-row td { text-align:center; padding:2.5rem; color:var(--text2); }
+
+  .card-foot {
+    padding:12px 22px; display:flex; align-items:center; justify-content:space-between;
+    border-top:1px solid var(--border);
+  }
+  .foot-label { font-size:12px; color:var(--text3); }
+
+  /* ── MODAL ── */
+  .modal-bg {
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4);
+    align-items:center; justify-content:center; z-index:200; padding:1rem;
+  }
+  .modal-bg.open { display:flex; }
+  .modal {
+    background:var(--surface); border-radius:var(--r-lg); padding:1.5rem;
+    width:100%; max-width:520px; border:1px solid var(--border);
+    box-shadow:0 8px 32px rgba(0,0,0,0.12);
+  }
+  .modal h3 { font-size:16px; font-weight:600; color:var(--navy); margin-bottom:0.75rem; }
+  .modal p  { font-size:13px; color:var(--text2); line-height:1.6; margin-bottom:0.75rem; }
+  .code-block {
+    font-family:var(--mono); font-size:11px; background:var(--bg); padding:8px 10px;
+    border-radius:var(--r); line-height:2; margin:6px 0; border:1px solid var(--border-md); word-break:break-all;
+  }
+  .file-drop {
+    border:2px dashed var(--border-md); border-radius:var(--r-lg); padding:1.75rem;
+    text-align:center; cursor:pointer; transition:all 0.15s; margin:0.75rem 0;
+  }
+  .file-drop:hover { border-color:var(--amber); background:var(--amber-bg); }
+  .file-drop .drop-title { font-size:14px; color:var(--text2); }
+  .file-drop .drop-sub   { font-size:12px; color:var(--text3); margin-top:4px; }
+  .modal-footer { display:flex; gap:8px; justify-content:flex-end; margin-top:1.25rem; }
+  .status-msg { font-size:13px; min-height:18px; margin-top:6px; }
+  .col-table { width:100%; border-collapse:collapse; font-size:12px; margin-top:8px; }
+  .col-table th { padding:6px 8px; background:var(--bg); text-align:left; font-weight:600; color:var(--text2); border:1px solid var(--border-md); }
+  .col-table td { padding:6px 8px; border:1px solid var(--border-md); color:var(--text); }
+  .col-table tr:nth-child(even) td { background:var(--bg); }
+  code { font-family:var(--mono); font-size:11px; background:var(--bg); padding:1px 5px; border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN / AUTH GATE -->
+<div id="login-screen" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">Leave Management</div>
+    <div class="login-sub" id="login-sub">Checking your sign-in status…</div>
+    <div id="login-spinner" style="text-align:center;padding:18px 0;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" style="animation:spin 1s linear infinite">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
+    </div>
+    <button class="login-btn" id="login-btn" style="display:none;" onclick="redirectToEntra()">Sign in with Microsoft</button>
+    <div class="login-error" id="login-error"></div>
+    <div id="setup-bypass" style="display:none;">
+      <div class="setup-divider"><span>First-time setup</span></div>
+      <button class="setup-btn" onclick="enterSetupMode()">⚙ Enter as Admin (Setup Mode)</button>
+    </div>
+  </div>
+</div>
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<!-- APP -->
+<div id="app-screen" class="screen">
+
+  <!-- TOP NAV -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M8 2v4M16 2v4M3 10h18"></path></svg>
+      </div>
+      <div>
+        <div class="brand-name">Leave Management</div>
+        <div class="brand-sub" id="app-sub">Admin view — all staff</div>
+      </div>
+    </div>
+    <div class="nav-right">
+      <div class="avatar" id="user-avatar">AS</div>
+      <div>
+        <div class="nav-name" id="user-name-display">Alice Santos</div>
+        <div class="nav-role" id="user-role-display">Admin</div>
+      </div>
+      <button class="btn-ghost" onclick="signOut()">Sign out</button>
+      <!-- Entra sign-out redirects to /.auth/logout -->
+    </div>
+  </header>
+
+  <div class="body">
+
+    <!-- Notices -->
+    <div id="setup-notice" class="setup-notice" style="display:none;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+      <span><strong>Setup Mode:</strong> You are signed in as a temporary admin. Import your Excel file to load real staff data. The Setup Mode button will be hidden once real data is loaded.</span>
+    </div>
+    <div id="readonly-notice" class="readonly-notice" style="display:none;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      Leave data is managed by HR. Contact them to request any changes.
+    </div>
+
+    <!-- Page header -->
+    <div class="page-header">
+      <h1>Leave overview</h1>
+      <p id="page-sub">Live balances for all employees · projected to 31 May 2026</p>
+    </div>
+
+
+
+    <!-- Table card -->
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <h2>All employees</h2>
+          <p id="card-sub">30 records · sorted alphabetically</p>
+        </div>
+        <div class="card-actions">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+            <input placeholder="Search by name…" id="search-input" oninput="filterTable(this.value)">
+          </div>
+          <button class="btn-primary" id="import-btn" onclick="openModal('import-modal')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            Import Excel / CSV
+          </button>
+          <button class="btn-outline" id="export-btn" onclick="exportHTML()" style="display: flex;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Save as HTML
+          </button>
+        </div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:22%" id="th-staffName" onclick="sortBy('staffName')">Employee</th>
+            <th style="width:9%" id="th-role" onclick="sortBy('role')">Role</th>
+            <th style="width:16%" id="th-managerName" onclick="sortBy('managerName')">Manager</th>
+            <th style="width:13%" id="th-accrualRate" onclick="sortBy('accrualRate')">Accrual rate</th>
+            <th style="width:12%" id="th-takenDate" onclick="sortBy('takenDate')">Taken until</th>
+            <th style="width:14%" id="th-accumulatedDate" onclick="sortBy('accumulatedDate')">Accumulated until</th>
+            <th class="r" style="width:14%" id="th-available" onclick="sortBy('available')">Available leave</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">AM</div>
+        <span class="emp-name">Abdul Malick Abrahams</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Alice Santos</td>
+      <td class="accrual-val">2.17 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(1, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(1)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">10.11 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">AA</div>
+        <span class="emp-name">Alexandra Albers</span>
+      </div></td>
+      <td><span class="badge b-admin">Admin</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">—</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(2, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(2)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">17.16 days</span></td>
+    </tr><tr class="me-row">
+      <td><div class="name-cell">
+        <div class="ini">AS</div>
+        <span class="emp-name">Alice Santos<span class="you">you</span></span>
+      </div></td>
+      <td><span class="badge b-admin">Admin</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">2.08 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(3, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(3)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">26.08 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">AW</div>
+        <span class="emp-name">Anne-Marie Wolfaardt</span>
+      </div></td>
+      <td><span class="badge b-admin">Admin</span></td>
+      <td class="muted">Alice Santos</td>
+      <td class="accrual-val">2.00 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(4, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(4)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">11.27 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">BA</div>
+        <span class="emp-name">Ben Adey</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Micaela de Castro</td>
+      <td class="accrual-val">1.67 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(5, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(5)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-low">1.67 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">BB</div>
+        <span class="emp-name">Benjamin Brett</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Mattew Blackbeard</td>
+      <td class="accrual-val">1.50 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(6, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(6)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-low">0.47 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">BB</div>
+        <span class="emp-name">Brandon Bernardo</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Hiren Mavalall</td>
+      <td class="accrual-val">1.50 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(7, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(7)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">4.25 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">DC</div>
+        <span class="emp-name">Daniel Christiaan Du Plooy</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Micaela de Castro</td>
+      <td class="accrual-val">1.42 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(8, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(8)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">7.30 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">DN</div>
+        <span class="emp-name">Desmond Nyenes</span>
+      </div></td>
+      <td><span class="badge b-admin">Admin</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">2.08 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(9, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(9)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">29.33 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">FB</div>
+        <span class="emp-name">Francois Botha</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Melanie van Wyk</td>
+      <td class="accrual-val">0.83 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(10, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(10)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">13.33 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">GH</div>
+        <span class="emp-name">Guzanne Henning</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Melanie van Wyk</td>
+      <td class="accrual-val">1.42 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(11, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(11)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">16.83 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">HV</div>
+        <span class="emp-name">Heike Van Der Westhuizen</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">1.33 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(12, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(12)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-low">2.59 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">HL</div>
+        <span class="emp-name">Heinrich Linnert</span>
+      </div></td>
+      <td><span class="badge b-manager">Manager</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">2.00 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(13, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(13)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">17.00 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">HM</div>
+        <span class="emp-name">Hiren Mavalall</span>
+      </div></td>
+      <td><span class="badge b-manager">Manager</span></td>
+      <td class="muted">Heinrich Linnert</td>
+      <td class="accrual-val">1.67 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(14, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(14)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">14.83 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">JS</div>
+        <span class="emp-name">Joel Saunders</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Micaela de Castro</td>
+      <td class="accrual-val">—</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(15, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(15)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">22.15 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">JN</div>
+        <span class="emp-name">John Nel</span>
+      </div></td>
+      <td><span class="badge b-manager">Manager</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">2.42 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(16, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(16)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">21.50 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">JS</div>
+        <span class="emp-name">Johnson Siziba</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Lauren Ashman</td>
+      <td class="accrual-val">1.58 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(17, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(17)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">12.08 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">LA</div>
+        <span class="emp-name">Lauren Ashman</span>
+      </div></td>
+      <td><span class="badge b-manager">Manager</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">1.58 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(18, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(18)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">4.66 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">LM</div>
+        <span class="emp-name">Lawrence Mc Kellar</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">2.00 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(19, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(19)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">10.50 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">LK</div>
+        <span class="emp-name">Lindelwa Khumalo</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Micaela de Castro</td>
+      <td class="accrual-val">1.67 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(20, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(20)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">8.49 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">MB</div>
+        <span class="emp-name">Matthew Blackbeard</span>
+      </div></td>
+      <td><span class="badge b-manager">Manager</span></td>
+      <td class="muted">Heinrich Linnert</td>
+      <td class="accrual-val">1.67 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(21, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(21)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">11.17 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">MV</div>
+        <span class="emp-name">Melanie van Wyk</span>
+      </div></td>
+      <td><span class="badge b-manager">Manager</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">1.92 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(22, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(22)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">16.67 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">MD</div>
+        <span class="emp-name">Micaela De Castro</span>
+      </div></td>
+      <td><span class="badge b-manager">Manager</span></td>
+      <td class="muted">Desmond Nyenes</td>
+      <td class="accrual-val">1.83 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(23, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(23)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">16.41 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">MR</div>
+        <span class="emp-name">Milano Reyneke</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Micaela de Castro</td>
+      <td class="accrual-val">1.33 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(24, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(24)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-low">1.50 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">PV</div>
+        <span class="emp-name">Pieter van den Berg</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Melanie van Wyk</td>
+      <td class="accrual-val">1.33 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(25, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(25)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">5.17 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">SS</div>
+        <span class="emp-name">Sarah Saunders</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Melanie van Wyk</td>
+      <td class="accrual-val">0.96 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(26, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(26)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-low">1.92 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">SS</div>
+        <span class="emp-name">Simon Sithole</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Heinrich Linnert</td>
+      <td class="accrual-val">1.58 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(27, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(27)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">10.67 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">SV</div>
+        <span class="emp-name">Stefan van der Walt</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Mattew Blackbeard</td>
+      <td class="accrual-val">1.33 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(28, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(28)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">3.50 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">VP</div>
+        <span class="emp-name">Verne Prinsloo</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">Hiren Mavalall</td>
+      <td class="accrual-val">1.42 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(29, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(29)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">5.33 days</span></td>
+    </tr><tr class="">
+      <td><div class="name-cell">
+        <div class="ini">WN</div>
+        <span class="emp-name">Wade Noland</span>
+      </div></td>
+      <td><span class="badge b-staff">Staff</span></td>
+      <td class="muted">John Nel</td>
+      <td class="accrual-val">1.58 days/mo</td>
+      <td class="muted">12 May 2026</td>
+      <td><div class="date-cell">
+           <input type="date" class="date-input" value="2026-05-31" onchange="updateAccumulatedDate(30, this.value)">
+           <button class="reset-btn" title="Reset to original" style="display:none" onclick="resetAccumulatedDate(30)">↺ Reset</button>
+         </div></td>
+      <td class="avail"><span class="avail av-pos">10.67 days</span></td>
+    </tr></tbody>
+      </table>
+
+      <div class="card-foot">
+        <span class="foot-label" id="foot-label">Showing 30 of 30 employees</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- IMPORT MODAL -->
+<div class="modal-bg" id="import-modal">
+  <div class="modal">
+    <h3>Import Leave Data</h3>
+    <p>Upload an <strong>Excel (.xlsx / .xls)</strong> or <strong>CSV</strong> file. This replaces all current data and updates every user's view instantly.</p>
+    <p>Use these exact column headers in row 1:</p>
+    <div class="code-block">Staff Name &nbsp;|&nbsp; Manager Name &nbsp;|&nbsp; Leave Accumulated Until &nbsp;|&nbsp; Leave Taken Until &nbsp;|&nbsp; Available Leave &nbsp;|&nbsp; Accrual Rate &nbsp;|&nbsp; Role &nbsp;|&nbsp; Password</div>
+    <table class="col-table">
+      <thead><tr><th>Column</th><th>Example</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Staff Name</td><td>Alexandra Albers</td><td>Full name (First + Last)</td></tr>
+        <tr><td>Manager Name</td><td>Alice Santos</td><td>Full name, must match a Staff Name</td></tr>
+        <tr><td>Leave Accumulated Until</td><td>2026-04-30</td><td>Date — YYYY-MM-DD or DD/MM/YYYY</td></tr>
+        <tr><td>Leave Taken Until</td><td>2026-04-15</td><td>Date — YYYY-MM-DD or DD/MM/YYYY</td></tr>
+        <tr><td>Available Leave</td><td>(blank)</td><td>Auto-calculated, leave empty</td></tr>
+        <tr><td>Accrual Rate</td><td>1.67</td><td>Days accrued per month</td></tr>
+        <tr><td>Role</td><td>Staff</td><td><code>Staff</code> / <code>Manager</code> / <code>Admin</code></td></tr>
+        <tr><td>Email</td><td>john.smith@company.com</td><td>Work email — must match their Microsoft account</td></tr>
+      </tbody>
+    </table>
+    <div class="file-drop" onclick="document.getElementById('file-input').click()">
+      <input type="file" id="file-input" accept=".csv,.xlsx,.xls" style="display:none" onchange="handleFile(event)">
+      <div class="drop-title">Drop file here or click to browse</div>
+      <div class="drop-sub">XLSX, XLS or CSV accepted</div>
+    </div>
+    <div class="status-msg" id="import-status" style="color: rgb(46, 143, 98);"></div>
+    <div class="modal-footer">
+      <button class="btn-outline" onclick="closeModal('import-modal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── SHAREPOINT IFRAME FIX ────────────────────────────────────────────────────
+(function() {
+  try {
+    if (window.self !== window.top) {
+      window.top.location.href = window.self.location.href;
+    }
+  } catch(e) {}
+})();
+// ─── DATA ──────────────────────────────────────────────────────────────────────
+let allData = [
+  {
+    "id": 1,
+    "staffName": "Abdul Malick Abrahams",
+    "managerName": "Alice Santos",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 10.10752191970468,
+    "baseAvailable": 10.10752191970468,
+    "accrualRate": 2.166666,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 2,
+    "staffName": "Alexandra Albers",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 17.161764705882376,
+    "baseAvailable": 17.161764705882376,
+    "accrualRate": 0,
+    "role": "Admin",
+    "email": ""
+  },
+  {
+    "id": 3,
+    "staffName": "Alice Santos",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 26.083333333333258,
+    "baseAvailable": 26.083333333333258,
+    "accrualRate": 2.083333,
+    "role": "Admin",
+    "email": ""
+  },
+  {
+    "id": 4,
+    "staffName": "Anne-Marie Wolfaardt",
+    "managerName": "Alice Santos",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 11.274188586371253,
+    "baseAvailable": 11.274188586371253,
+    "accrualRate": 2,
+    "role": "Admin",
+    "email": ""
+  },
+  {
+    "id": 5,
+    "staffName": "Ben Adey",
+    "managerName": "Micaela de Castro",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 1.6666666666666667,
+    "baseAvailable": 1.6666666666666667,
+    "accrualRate": 1.666666,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 6,
+    "staffName": "Benjamin Brett",
+    "managerName": "Mattew Blackbeard",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 0.4665436086756074,
+    "baseAvailable": 0.4665436086756074,
+    "accrualRate": 1.5,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 7,
+    "staffName": "Brandon Bernardo",
+    "managerName": "Hiren Mavalall",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 4.25,
+    "baseAvailable": 4.25,
+    "accrualRate": 1.5,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 8,
+    "staffName": "Daniel Christiaan Du Plooy",
+    "managerName": "Micaela de Castro",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 7.30376095985234,
+    "baseAvailable": 7.30376095985234,
+    "accrualRate": 1.416666,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 9,
+    "staffName": "Desmond Nyenes",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 29.333333333332405,
+    "baseAvailable": 29.333333333332405,
+    "accrualRate": 2.083333,
+    "role": "Admin",
+    "email": ""
+  },
+  {
+    "id": 10,
+    "staffName": "Francois Botha",
+    "managerName": "Melanie van Wyk",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 13.33333333333335,
+    "baseAvailable": 13.33333333333335,
+    "accrualRate": 0.833333,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 11,
+    "staffName": "Guzanne Henning",
+    "managerName": "Melanie van Wyk",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 16.833333333333343,
+    "baseAvailable": 16.833333333333343,
+    "accrualRate": 1.416666,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 12,
+    "staffName": "Heike Van Der Westhuizen",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 2.589601599753883,
+    "baseAvailable": 2.589601599753883,
+    "accrualRate": 1.333333,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 13,
+    "staffName": "Heinrich Linnert",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 16.999999999999943,
+    "baseAvailable": 16.999999999999943,
+    "accrualRate": 2,
+    "role": "Manager",
+    "email": ""
+  },
+  {
+    "id": 14,
+    "staffName": "Hiren Mavalall",
+    "managerName": "Heinrich Linnert",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 14.833333333333371,
+    "baseAvailable": 14.833333333333371,
+    "accrualRate": 1.666666,
+    "role": "Manager",
+    "email": ""
+  },
+  {
+    "id": 15,
+    "staffName": "Joel Saunders",
+    "managerName": "Micaela de Castro",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 22.151130595293083,
+    "baseAvailable": 22.151130595293083,
+    "accrualRate": 0,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 16,
+    "staffName": "John Nel",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 21.499999999999915,
+    "baseAvailable": 21.499999999999915,
+    "accrualRate": 2.416666,
+    "role": "Manager",
+    "email": ""
+  },
+  {
+    "id": 17,
+    "staffName": "Johnson Siziba",
+    "managerName": "Lauren Ashman",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 12.08333333333335,
+    "baseAvailable": 12.08333333333335,
+    "accrualRate": 1.583333,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 18,
+    "staffName": "Lauren Ashman",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 4.6550146131364585,
+    "baseAvailable": 4.6550146131364585,
+    "accrualRate": 1.583333,
+    "role": "Manager",
+    "email": ""
+  },
+  {
+    "id": 19,
+    "staffName": "Lawrence Mc Kellar",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 10.5,
+    "baseAvailable": 10.5,
+    "accrualRate": 2,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 20,
+    "staffName": "Lindelwa Khumalo",
+    "managerName": "Micaela de Castro",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 8.492231964313248,
+    "baseAvailable": 8.492231964313248,
+    "accrualRate": 1.666666,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 21,
+    "staffName": "Matthew Blackbeard",
+    "managerName": "Heinrich Linnert",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 11.1666666666667,
+    "baseAvailable": 11.1666666666667,
+    "accrualRate": 1.666666,
+    "role": "Manager",
+    "email": ""
+  },
+  {
+    "id": 22,
+    "staffName": "Melanie van Wyk",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 16.66666666666663,
+    "baseAvailable": 16.66666666666663,
+    "accrualRate": 1.916666,
+    "role": "Manager",
+    "email": ""
+  },
+  {
+    "id": 23,
+    "staffName": "Micaela De Castro",
+    "managerName": "Desmond Nyenes",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 16.411764705882376,
+    "baseAvailable": 16.411764705882376,
+    "accrualRate": 1.833333,
+    "role": "Manager",
+    "email": ""
+  },
+  {
+    "id": 24,
+    "staffName": "Milano Reyneke",
+    "managerName": "Micaela de Castro",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 1.5,
+    "baseAvailable": 1.5,
+    "accrualRate": 1.333333,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 25,
+    "staffName": "Pieter van den Berg",
+    "managerName": "Melanie van Wyk",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 5.166666666666666,
+    "baseAvailable": 5.166666666666666,
+    "accrualRate": 1.333333,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 26,
+    "staffName": "Sarah Saunders",
+    "managerName": "Melanie van Wyk",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 1.916666666666785,
+    "baseAvailable": 1.916666666666785,
+    "accrualRate": 0.958333,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 27,
+    "staffName": "Simon Sithole",
+    "managerName": "Heinrich Linnert",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 10.6666666666667,
+    "baseAvailable": 10.6666666666667,
+    "accrualRate": 1.583333,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 28,
+    "staffName": "Stefan van der Walt",
+    "managerName": "Mattew Blackbeard",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 3.5,
+    "baseAvailable": 3.5,
+    "accrualRate": 1.333333,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 29,
+    "staffName": "Verne Prinsloo",
+    "managerName": "Hiren Mavalall",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 5.333333333333343,
+    "baseAvailable": 5.333333333333343,
+    "accrualRate": 1.416666,
+    "role": "Staff",
+    "email": ""
+  },
+  {
+    "id": 30,
+    "staffName": "Wade Noland",
+    "managerName": "John Nel",
+    "accumulatedDate": "2026-05-31",
+    "baseAccumulatedDate": "2026-05-31",
+    "takenDate": "2026-05-12",
+    "available": 10.666666666666686,
+    "baseAvailable": 10.666666666666686,
+    "accrualRate": 1.583333,
+    "role": "Staff",
+    "email": ""
+  }
+];
+
+// ─── STATE ─────────────────────────────────────────────────────────────────────
+let currentUser = null;
+let filterText  = '';
+let sortField   = null;
+let sortDir     = 1;
+let dataIsReal  = allData.length > 0 && allData.some(r => r.staffName && r.email);
+
+// ─── HELPERS ───────────────────────────────────────────────────────────────────
+function normRole(r) {
+  if (!r) return 'Staff';
+  const s = String(r).trim().toLowerCase();
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function initials(name) {
+  return (name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  return dt.toLocaleDateString('en-ZA',{day:'2-digit',month:'short',year:'numeric'});
+}
+function availDays(row) {
+  const base = parseFloat(row.baseAvailable);
+  if (isNaN(base)) return row.available !== null ? row.available : null;
+  if (row.accumulatedDate && row.baseAccumulatedDate && row.accumulatedDate !== row.baseAccumulatedDate) {
+    const bd = new Date(row.baseAccumulatedDate), nd = new Date(row.accumulatedDate);
+    if (!isNaN(bd) && !isNaN(nd)) {
+      const mc = (nd.getFullYear()-bd.getFullYear())*12 + (nd.getMonth()-bd.getMonth());
+      if (mc <= 0) return base;
+      return +((base + mc*(row.accrualRate||0)).toFixed(2));
+    }
+  }
+  return base;
+}
+function avClass(v) {
+  if (v===null) return '';
+  return v < 0 ? 'av-neg' : v < 3 ? 'av-low' : 'av-pos';
+}
+function roleClass(r) {
+  const rn = normRole(r);
+  return rn==='Admin' ? 'b-admin' : rn==='Manager' ? 'b-manager' : 'b-staff';
+}
+
+// ─── DATE EDITING ──────────────────────────────────────────────────────────────
+function updateAccumulatedDate(id, newDate) {
+  const row = allData.find(r=>r.id===id);
+  if (!row) return;
+  row.accumulatedDate = newDate;
+  renderTable();
+}
+function resetAccumulatedDate(id) {
+  const row = allData.find(r=>r.id===id);
+  if (!row) return;
+  row.accumulatedDate = row.baseAccumulatedDate;
+  row.available       = row.baseAvailable;
+  renderTable();
+}
+
+// ─── AUTH (Entra ID via Azure Static Web Apps /.auth/me) ───────────────────────
+
+// Called on page load — checks if Azure has already authenticated the user
+async function initAuth() {
+  try {
+    const res = await fetch('/.auth/me');
+    if (!res.ok) throw new Error('auth endpoint not available');
+    const payload = await res.json();
+    const principal = payload.clientPrincipal;
+
+    if (!principal) {
+      // Not signed in — show the Microsoft sign-in button
+      showLoginButton();
+      return;
+    }
+
+    // Signed in — match their identity to the staff list
+    const email = principal.userDetails.toLowerCase(); // e.g. "john.smith@company.com"
+    const claims = principal.claims || [];
+
+    // Check for Admin/Manager via Entra group claims (optional — falls back to Excel role)
+    // Group names must match exactly what's configured in your App Registration
+    const groupAdmin   = claims.some(c => c.typ === 'groups' && c.val === 'Leave-Admins');
+    const groupManager = claims.some(c => c.typ === 'groups' && c.val === 'Leave-Managers');
+
+    const match = allData.find(r =>
+      r.email && r.email.toLowerCase() === email
+    );
+
+    if (!match && !groupAdmin) {
+      // Authenticated with Microsoft but not in the staff list
+      showError(`You're signed in as ${principal.userDetails} but not found in the staff list. Contact HR to be added.`);
+      showLoginButton(true);
+      return;
+    }
+
+    if (match) {
+      // Honour group-based role upgrades from Entra, otherwise keep Excel role
+      currentUser = { ...match };
+      if (groupAdmin)   currentUser.role = 'Admin';
+      if (groupManager && currentUser.role !== 'Admin') currentUser.role = 'Manager';
+    } else {
+      // Admin by group claim but not in staff list (e.g. IT admin)
+      currentUser = {
+        id: 0, staffName: principal.userDetails,
+        email: email, managerName: '', accumulatedDate: '',
+        takenDate: '', accrualRate: 0, role: 'Admin'
+      };
+    }
+
+    dataIsReal = true;
+    document.getElementById('setup-bypass').style.display = 'none';
+    showApp();
+
+  } catch (e) {
+    // /.auth/me not available — likely running locally without Azure
+    // Show the setup bypass so the developer can still work
+    console.warn('Entra auth not available (running locally?):', e.message);
+    document.getElementById('login-sub').textContent = 'Running in local / dev mode';
+    document.getElementById('login-spinner').style.display = 'none';
+    document.getElementById('login-error').textContent =
+      '⚠ Microsoft sign-in is only available when hosted on Azure Static Web Apps.';
+    document.getElementById('setup-bypass').style.display = 'block';
+  }
+}
+
+function showLoginButton(keepError) {
+  document.getElementById('login-sub').textContent = 'Sign in with your Microsoft work account';
+  document.getElementById('login-spinner').style.display = 'none';
+  document.getElementById('login-btn').style.display = 'block';
+  if (!keepError) document.getElementById('login-error').textContent = '';
+}
+
+function showError(msg) {
+  document.getElementById('login-error').textContent = msg;
+}
+
+function redirectToEntra() {
+  window.location.href = '/.auth/login/aad?post_login_redirect_uri=' + encodeURIComponent(window.location.pathname);
+}
+
+function enterSetupMode() {
+  currentUser = {id:0, staffName:'Admin', email:'', managerName:'', accumulatedDate:'', takenDate:'', accrualRate:0, role:'Admin'};
+  showApp();
+  document.getElementById('setup-notice').style.display='flex';
+}
+
+function signOut() {
+  currentUser = null; filterText = ''; sortField = null; sortDir = 1;
+  document.getElementById('search-input').value = '';
+  document.getElementById('setup-notice').style.display = 'none';
+  clearSortHeaders();
+  // Redirect to Entra sign-out when hosted; fall back to login screen locally
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    window.location.href = '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent(window.location.pathname);
+  } else {
+    document.getElementById('login-sub').textContent = 'Checking your sign-in status…';
+    document.getElementById('login-spinner').style.display = 'block';
+    document.getElementById('login-btn').style.display = 'none';
+    document.getElementById('login-error').textContent = '';
+    document.getElementById('setup-bypass').style.display = dataIsReal ? 'none' : 'block';
+    show('login-screen');
+  }
+}
+
+// Kick off auth check as soon as the page loads
+initAuth();
+
+// ─── APP SHELL ─────────────────────────────────────────────────────────────────
+function showApp() {
+  show('app-screen');
+  const role = normRole(currentUser.role);
+  document.getElementById('user-avatar').textContent      = initials(currentUser.staffName);
+  document.getElementById('user-name-display').textContent= currentUser.staffName;
+  document.getElementById('user-role-display').textContent= role;
+  const subs={Staff:'Viewing your own leave balance',Manager:"Viewing your team's leave",Admin:'Admin view — all staff'};
+  document.getElementById('app-sub').textContent = subs[role]||'';
+  const isAdmin = role==='Admin';
+  const isManager = role==='Manager';
+  document.getElementById('import-btn').disabled              = !isAdmin;
+  document.getElementById('export-btn').style.display         = isAdmin ? 'flex' : 'none';
+  document.getElementById('readonly-notice').style.display    = (isAdmin||isManager) ? 'none' : 'flex';
+  const statsStrip = document.getElementById('stats-strip');
+  if (statsStrip) statsStrip.style.display = (isAdmin||isManager) ? 'grid' : 'none';
+  renderTable();
+}
+function show(screenId) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(screenId).classList.add('active');
+}
+
+// ─── DATA VISIBILITY ───────────────────────────────────────────────────────────
+function getVisibleData() {
+  const role = normRole(currentUser.role);
+  const me   = currentUser.staffName.toLowerCase();
+  let rows   = [...allData];
+  if (role==='Staff') {
+    rows = rows.filter(r=>r.staffName.toLowerCase()===me);
+  } else if (role==='Manager') {
+    rows = rows.filter(r=>r.staffName.toLowerCase()===me||r.managerName.toLowerCase()===me);
+  }
+  if (filterText) {
+    const ft=filterText.toLowerCase();
+    rows=rows.filter(r=>r.staffName.toLowerCase().includes(ft)||r.managerName.toLowerCase().includes(ft));
+  }
+  if (sortField) {
+    rows=[...rows].sort((a,b)=>{
+      let va=sortField==='available'?(availDays(a)??-9999):a[sortField];
+      let vb=sortField==='available'?(availDays(b)??-9999):b[sortField];
+      if (typeof va==='string') return va.localeCompare(vb)*sortDir;
+      return (va-vb)*sortDir;
+    });
+  }
+  return rows;
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────────
+function renderTable() {
+  const rows  = getVisibleData();
+  const tbody = document.getElementById('table-body');
+  const me    = currentUser.staffName.toLowerCase();
+  const role  = normRole(currentUser.role);
+  const isAdmin   = role==='Admin';
+  const isManager = role==='Manager';
+  const canEdit   = true; // All users can adjust their own (and visible) accumulated until dates
+
+  document.getElementById('card-sub').textContent =
+    `${rows.length} record${rows.length!==1?'s':''} · sorted alphabetically`;
+
+  if (!rows.length) {
+    tbody.innerHTML='<tr class="empty-row"><td colspan="7">No records found</td></tr>';
+    document.getElementById('foot-label').textContent='No employees found';
+    return;
+  }
+
+  tbody.innerHTML = rows.map(r => {
+    const av    = availDays(r);
+    const isMe  = r.staffName.toLowerCase()===me;
+    const avTxt = av!==null
+      ? `<span class="avail ${avClass(av)}">${av.toFixed(2)} days</span>`
+      : '—';
+    const isModified = r.accumulatedDate && r.baseAccumulatedDate && r.accumulatedDate!==r.baseAccumulatedDate;
+    const dateCell = canEdit && r.accumulatedDate
+      ? `<div class="date-cell">
+           <input type="date" class="date-input" value="${r.accumulatedDate}"
+             onchange="updateAccumulatedDate(${r.id}, this.value)">
+           <button class="reset-btn" title="Reset to original"
+             style="${isModified?'':'display:none'}"
+             onclick="resetAccumulatedDate(${r.id})">↺ Reset</button>
+         </div>`
+      : `<span class="date-chip">
+           <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>
+           ${fmtDate(r.accumulatedDate)}
+         </span>`;
+    return `<tr class="${isMe?'me-row':''}">
+      <td><div class="name-cell">
+        <div class="ini">${initials(r.staffName)}</div>
+        <span class="emp-name">${r.staffName}${isMe?'<span class="you">you</span>':''}</span>
+      </div></td>
+      <td><span class="badge ${roleClass(r.role)}">${normRole(r.role)}</span></td>
+      <td class="muted">${r.managerName||'—'}</td>
+      <td class="accrual-val">${r.accrualRate?r.accrualRate.toFixed(2)+' days/mo':'—'}</td>
+      <td class="muted">${fmtDate(r.takenDate)}</td>
+      <td>${dateCell}</td>
+      <td class="avail">${avTxt}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('foot-label').textContent =
+    `Showing ${rows.length} of ${allData.length} employees`;
+}
+
+// ─── SORTING ───────────────────────────────────────────────────────────────────
+function sortBy(field) {
+  if (sortField===field) sortDir*=-1; else { sortField=field; sortDir=1; }
+  clearSortHeaders();
+  const th=document.getElementById('th-'+field);
+  if (th) th.classList.add(sortDir===1?'sort-asc':'sort-desc');
+  renderTable();
+}
+function clearSortHeaders() {
+  document.querySelectorAll('th').forEach(t=>t.classList.remove('sort-asc','sort-desc'));
+}
+function filterTable(v) { filterText=v; renderTable(); }
+
+// ─── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => {
+  if (e.target.classList.contains('modal-bg')) e.target.classList.remove('open');
+});
+
+// ─── EXPORT HTML ───────────────────────────────────────────────────────────────
+function exportHTML() {
+  const dataJSON = JSON.stringify(allData, null, 2);
+  // Clear transient UI state before capturing DOM so exports always start clean
+  const statusEl = document.getElementById('import-status');
+  const prevStatus = statusEl ? statusEl.textContent : '';
+  if (statusEl) statusEl.textContent = '';
+  let src = document.documentElement.outerHTML;
+  if (statusEl) statusEl.textContent = prevStatus; // restore for current session
+  src = src.replace(/let allData\s*=\s*\[[\s\S]*?\];/, 'let allData = '+dataJSON+';');
+  src = src.replace(/id="login-screen"[^>]*class="([^"]*)"/, m=>m.replace(/class="[^"]*"/,'class="screen active"'));
+  src = src.replace(/id="app-screen"[^>]*class="([^"]*)"/, m=>m.replace(/class="[^"]*"/,'class="screen"'));
+  const blob=new Blob([src],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='leave-management.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── EXCEL DATE PARSER ─────────────────────────────────────────────────────────
+function parseExcelDate(val) {
+  if (!val && val!==0) return '';
+  if (typeof val==='number') {
+    try { const d=XLSX.SSF.parse_date_code(val); if(d) return `${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`; } catch(e){}
+  }
+  const s=String(val).trim();
+  const dmY=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(dmY) return `${dmY[3]}-${dmY[2].padStart(2,'0')}-${dmY[1].padStart(2,'0')}`;
+  const iso=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  const dt=new Date(s);
+  if(!isNaN(dt)) return dt.toISOString().slice(0,10);
+  return s;
+}
+
+// ─── COLUMN MAP ────────────────────────────────────────────────────────────────
+const COL_MAP = {
+  'staff name':'staffName','staffname':'staffName',
+  'manager name':'managerName','managername':'managerName',
+  'leave accumulated until':'accumulatedDate','leaveaccumulateduntil':'accumulatedDate','accumulated until':'accumulatedDate',
+  'leave taken until':'takenDate','leavetakenuntil':'takenDate','taken until':'takenDate',
+  'available leave':'available','availableleave':'available',
+  'accrual rate':'accrualRate','accrualrate':'accrualRate',
+  'role':'role','email':'email','email address':'email'
+};
+function normalizeRows(rows) {
+  return rows.map((r,i)=>{
+    const n={};
+    Object.keys(r).forEach(k=>{const m=COL_MAP[k.toLowerCase().trim()]; if(m) n[m]=r[k];});
+    const accDate=parseExcelDate(n.accumulatedDate);
+    const avail=n.available!==undefined&&n.available!==''?parseFloat(n.available):null;
+    return {
+      id:i+1, staffName:String(n.staffName||'').trim(), managerName:String(n.managerName||'').trim(),
+      email:String(n.email||'').trim().toLowerCase(),
+      accumulatedDate:accDate, baseAccumulatedDate:accDate, takenDate:parseExcelDate(n.takenDate),
+      available:avail, baseAvailable:avail, accrualRate:parseFloat(n.accrualRate)||0,
+      role:normRole(n.role||'Staff')
+    };
+  }).filter(r=>r.staffName);
+}
+
+// ─── FILE IMPORT ───────────────────────────────────────────────────────────────
+function handleFile(e) {
+  const file=e.target.files[0]; if(!file) return;
+  const status=document.getElementById('import-status');
+  status.style.color='#7c8298'; status.textContent='Reading file…';
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    try {
+      let rows;
+      if(file.name.toLowerCase().endsWith('.csv')){
+        const lines=ev.target.result.trim().split('\n');
+        const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+        rows=lines.slice(1).map(line=>{
+          const vals=line.split(',').map(v=>v.trim().replace(/^"|"$/g,''));
+          const obj={}; headers.forEach((h,i)=>obj[h]=vals[i]||''); return obj;
+        });
+      } else {
+        const wb=XLSX.read(ev.target.result,{type:'binary',cellDates:false});
+        rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true});
+      }
+      const imported=normalizeRows(rows);
+      if(!imported.length){status.style.color='#b8538a';status.textContent='No valid rows found — check your column headers match exactly.';return;}
+      allData=imported; dataIsReal=true;
+      document.getElementById('setup-bypass').style.display='none';
+      document.getElementById('setup-notice').style.display='none';
+      status.style.color='#2e8f62';
+      status.textContent=`Successfully imported ${imported.length} record${imported.length!==1?'s':''}. All views updated.`;
+      // Update "projected to" date in page header from the imported accumulatedDate
+      const firstWithDate = imported.find(r=>r.accumulatedDate);
+      if(firstWithDate && firstWithDate.accumulatedDate){
+        const pageSub = document.getElementById('page-sub');
+        if(pageSub){
+          const parts = firstWithDate.accumulatedDate.split('-');
+          const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+          const formatted = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+          pageSub.textContent = `Live balances for all employees · projected to ${formatted}`;
+        }
+      }
+      const stillValid=allData.find(r=>r.email && currentUser.email && r.email===currentUser.email.toLowerCase());
+      if(stillValid){currentUser={...stillValid};renderTable();}
+      else if(normRole(currentUser.role)==='Admin'){renderTable();} // IT/group-claim admins not in staff list
+      else{status.textContent+=' Your account was not found in the new file — signing out.';setTimeout(signOut,2500);}
+      e.target.value='';
+    } catch(err){status.style.color='#b8538a';status.textContent='Error reading file: '+err.message;}
+  };
+  if(file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file);
+  else reader.readAsBinaryString(file);
+}
+</script>
+
+
+</body></html>
