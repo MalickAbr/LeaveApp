@@ -1312,6 +1312,23 @@ async function initAuth() {
       r.email && r.email.toLowerCase() === email
     );
 
+    // FIRST-RUN BYPASS: no real staff data has been imported yet (still placeholder/empty).
+    // Let any authenticated person in as Admin so they can do the initial Excel upload.
+    // This stops applying as soon as a real Excel file with emails has been imported,
+    // since dataIsReal becomes true and this branch is skipped from then on.
+    if (!dataIsReal && !match && !groupAdmin) {
+      currentUser = {
+        id: 0, staffName: principal.userDetails, email: email,
+        managerName: '', accumulatedDate: '', takenDate: '',
+        accrualRate: 0, role: 'Admin'
+      };
+      document.getElementById('setup-bypass').style.display = 'none';
+      showApp();
+      const notice = document.getElementById('setup-notice');
+      if (notice) notice.style.display = 'flex';
+      return;
+    }
+
     if (!match && !groupAdmin) {
       // Authenticated with Microsoft but not in the staff list
       showError(`You're signed in as ${principal.userDetails} but not found in the staff list. Contact HR to be added.`);
