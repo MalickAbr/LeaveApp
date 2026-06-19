@@ -1299,7 +1299,23 @@ async function initAuth() {
       return;
     }
 
-    // Signed in — match their identity to the staff list
+    // Signed in — pull the shared server data (if any) before checking who they are.
+    try {
+      const dataRes = await fetch('/api/leave-data');
+      if (dataRes.ok) {
+        const serverPayload = await dataRes.json();
+        if (Array.isArray(serverPayload.data) && serverPayload.data.length > 0) {
+          allData = serverPayload.data;
+          dataIsReal = allData.some(r => r.staffName && r.email);
+        }
+        // If serverPayload.data is empty, leave allData/dataIsReal as the placeholder
+        // defaults — that keeps the first-run Admin bypass active until someone imports.
+      }
+    } catch (fetchErr) {
+      console.warn('Could not load shared leave data, using local placeholder:', fetchErr.message);
+    }
+
+    // Match their identity to the staff list
     const email = principal.userDetails.toLowerCase(); // e.g. "john.smith@company.com"
     const claims = principal.claims || [];
 
@@ -1600,7 +1616,7 @@ function handleFile(e) {
   const status=document.getElementById('import-status');
   status.style.color='#7c8298'; status.textContent='Reading file…';
   const reader=new FileReader();
-  reader.onload=function(ev){
+  reader.onload=async function(ev){
     try {
       let rows;
       if(file.name.toLowerCase().endsWith('.csv')){
@@ -1620,7 +1636,25 @@ function handleFile(e) {
       document.getElementById('setup-bypass').style.display='none';
       document.getElementById('setup-notice').style.display='none';
       status.style.color='#2e8f62';
-      status.textContent=`Successfully imported ${imported.length} record${imported.length!==1?'s':''}. All views updated.`;
+      status.textContent=`Saving ${imported.length} record${imported.length!==1?'s':''} to the server…`;
+
+      // Persist to shared server storage so everyone sees this data, not just this browser session.
+      try {
+        const saveRes = await fetch('/api/leave-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: allData })
+        });
+        if (!saveRes.ok) {
+          const errBody = await saveRes.json().catch(()=>({}));
+          throw new Error(errBody.error || `Server responded ${saveRes.status}`);
+        }
+        status.textContent=`Successfully imported and saved ${imported.length} record${imported.length!==1?'s':''}. Everyone will now see this data.`;
+      } catch (saveErr) {
+        status.style.color='#b8538a';
+        status.textContent=`Imported locally, but saving to the server failed: ${saveErr.message}. Others won't see this until it saves — try again.`;
+      }
+
       // Update "projected to" date in page header from the imported accumulatedDate
       const firstWithDate = imported.find(r=>r.accumulatedDate);
       if(firstWithDate && firstWithDate.accumulatedDate){
