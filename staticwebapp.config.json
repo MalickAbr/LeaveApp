@@ -1,23 +1,10 @@
 {
-  "auth": {
-    "identityProviders": {
-      "azureActiveDirectory": {
-        "registration": {
-          "openIdIssuer": "https://login.microsoftonline.com/cd21d364-8e00-45c3-afba-13e5798a68f8/v2.0",
-          "clientIdSettingName": "e6d6edec-8e18-4e98-ae3e-eaf1fc4c802d",
-          "clientSecretSettingName": "4n88Q~vUTV2yeFe4b1UvAjUUxy2z757J~3DZ3aKx"
-        }
-      }
-    }
-  },
   "routes": [
     {
-      "route": "/.auth/*",
-      "allowedRoles": ["anonymous"]
-    },
-    {
       "route": "/*",
-      "allowedRoles": ["authenticated"]
+      "allowedRoles": [
+        "authenticated"
+      ]
     }
   ],
   "responseOverrides": {
