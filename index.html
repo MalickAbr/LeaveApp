@@ -1304,6 +1304,17 @@ async function initAuth() {
         if (Array.isArray(serverPayload.data) && serverPayload.data.length > 0) {
           allData = serverPayload.data;
           dataIsReal = allData.some(r => r.staffName && r.email);
+          // Update the "projected to" date in the page header
+          const firstWithDate = allData.find(r => r.accumulatedDate);
+          if (firstWithDate && firstWithDate.accumulatedDate) {
+            const pageSub = document.getElementById('page-sub');
+            if (pageSub) {
+              const parts = firstWithDate.accumulatedDate.split('-');
+              const d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+              const formatted = d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+              pageSub.textContent = 'Live balances for all employees \xb7 projected to ' + formatted;
+            }
+          }
         }
         // If serverPayload.data is empty, leave allData/dataIsReal as the placeholder
         // defaults — that keeps the first-run Admin bypass active until someone imports.
