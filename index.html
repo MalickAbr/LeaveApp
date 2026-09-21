@@ -256,20 +256,17 @@
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- LOGIN / AUTH GATE -->
 <div id="login-screen" class="screen active">
   <div class="login-card">
     <div class="login-logo">Leave Management</div>
-    <div class="login-sub">Sign in to view your leave balance</div>
-    <div class="field">
-      <label>Full name</label>
-      <input type="text" id="login-name" placeholder="e.g. Alexandra Albers" autocomplete="name" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()">
+    <div class="login-sub" id="login-sub">Checking your sign-in status…</div>
+    <div id="login-spinner" style="text-align:center;padding:18px 0;">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" stroke-linecap="round" style="animation:spin 1s linear infinite">
+        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
+      </svg>
     </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <button class="login-btn" onclick="doLogin()">Sign in</button>
+    <button class="login-btn" id="login-btn" style="display:none;" onclick="redirectToEntra()">Sign in with Microsoft</button>
     <div class="login-error" id="login-error"></div>
     <div id="setup-bypass" style="display:none;">
       <div class="setup-divider"><span>First-time setup</span></div>
@@ -277,6 +274,9 @@
     </div>
   </div>
 </div>
+<style>
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
 
 <!-- APP -->
 <div id="app-screen" class="screen">
@@ -299,6 +299,7 @@
         <div class="nav-role" id="user-role-display">Admin</div>
       </div>
       <button class="btn-ghost" onclick="signOut()">Sign out</button>
+      <!-- Entra sign-out redirects to /.auth/logout -->
     </div>
   </header>
 
@@ -338,7 +339,10 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             Import Excel / CSV
           </button>
-
+          <button class="btn-outline" id="export-btn" onclick="exportHTML()" style="display: flex;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Save as HTML
+          </button>
         </div>
       </div>
 
@@ -802,7 +806,7 @@
         <tr><td>Available Leave</td><td>(blank)</td><td>Auto-calculated, leave empty</td></tr>
         <tr><td>Accrual Rate</td><td>1.67</td><td>Days accrued per month</td></tr>
         <tr><td>Role</td><td>Staff</td><td><code>Staff</code> / <code>Manager</code> / <code>Admin</code></td></tr>
-        <tr><td>Password</td><td>pass123</td><td>Each person's login password</td></tr>
+        <tr><td>Email</td><td>john.smith@company.com</td><td>Work email — must match their Microsoft account</td></tr>
       </tbody>
     </table>
     <div class="file-drop" onclick="document.getElementById('file-input').click()">
@@ -839,7 +843,7 @@ let allData = [
     "baseAvailable": 10.10752191970468,
     "accrualRate": 2.166666,
     "role": "Staff",
-    "password": "Malick1"
+    "email": ""
   },
   {
     "id": 2,
@@ -852,7 +856,7 @@ let allData = [
     "baseAvailable": 17.161764705882376,
     "accrualRate": 0,
     "role": "Admin",
-    "password": "Allie2"
+    "email": ""
   },
   {
     "id": 3,
@@ -865,7 +869,7 @@ let allData = [
     "baseAvailable": 26.083333333333258,
     "accrualRate": 2.083333,
     "role": "Admin",
-    "password": "Alice21"
+    "email": ""
   },
   {
     "id": 4,
@@ -878,7 +882,7 @@ let allData = [
     "baseAvailable": 11.274188586371253,
     "accrualRate": 2,
     "role": "Admin",
-    "password": "Anne-Marie3"
+    "email": ""
   },
   {
     "id": 5,
@@ -891,7 +895,7 @@ let allData = [
     "baseAvailable": 1.6666666666666667,
     "accrualRate": 1.666666,
     "role": "Staff",
-    "password": "Ben29"
+    "email": ""
   },
   {
     "id": 6,
@@ -904,7 +908,7 @@ let allData = [
     "baseAvailable": 0.4665436086756074,
     "accrualRate": 1.5,
     "role": "Staff",
-    "password": "Benjamin4"
+    "email": ""
   },
   {
     "id": 7,
@@ -917,7 +921,7 @@ let allData = [
     "baseAvailable": 4.25,
     "accrualRate": 1.5,
     "role": "Staff",
-    "password": "Brandon5"
+    "email": ""
   },
   {
     "id": 8,
@@ -930,7 +934,7 @@ let allData = [
     "baseAvailable": 7.30376095985234,
     "accrualRate": 1.416666,
     "role": "Staff",
-    "password": "Christiaan6"
+    "email": ""
   },
   {
     "id": 9,
@@ -943,7 +947,7 @@ let allData = [
     "baseAvailable": 29.333333333332405,
     "accrualRate": 2.083333,
     "role": "Admin",
-    "password": "Desmond7"
+    "email": ""
   },
   {
     "id": 10,
@@ -956,7 +960,7 @@ let allData = [
     "baseAvailable": 13.33333333333335,
     "accrualRate": 0.833333,
     "role": "Staff",
-    "password": "Francois8"
+    "email": ""
   },
   {
     "id": 11,
@@ -969,7 +973,7 @@ let allData = [
     "baseAvailable": 16.833333333333343,
     "accrualRate": 1.416666,
     "role": "Staff",
-    "password": "Guzanne9"
+    "email": ""
   },
   {
     "id": 12,
@@ -982,7 +986,7 @@ let allData = [
     "baseAvailable": 2.589601599753883,
     "accrualRate": 1.333333,
     "role": "Staff",
-    "password": "Heike0"
+    "email": ""
   },
   {
     "id": 13,
@@ -995,7 +999,7 @@ let allData = [
     "baseAvailable": 16.999999999999943,
     "accrualRate": 2,
     "role": "Manager",
-    "password": "Heinrich10"
+    "email": ""
   },
   {
     "id": 14,
@@ -1008,7 +1012,7 @@ let allData = [
     "baseAvailable": 14.833333333333371,
     "accrualRate": 1.666666,
     "role": "Manager",
-    "password": "Hiren11"
+    "email": ""
   },
   {
     "id": 15,
@@ -1021,7 +1025,7 @@ let allData = [
     "baseAvailable": 22.151130595293083,
     "accrualRate": 0,
     "role": "Staff",
-    "password": "Joel12"
+    "email": ""
   },
   {
     "id": 16,
@@ -1034,7 +1038,7 @@ let allData = [
     "baseAvailable": 21.499999999999915,
     "accrualRate": 2.416666,
     "role": "Manager",
-    "password": "John13"
+    "email": ""
   },
   {
     "id": 17,
@@ -1047,7 +1051,7 @@ let allData = [
     "baseAvailable": 12.08333333333335,
     "accrualRate": 1.583333,
     "role": "Staff",
-    "password": "Johnson14"
+    "email": ""
   },
   {
     "id": 18,
@@ -1060,7 +1064,7 @@ let allData = [
     "baseAvailable": 4.6550146131364585,
     "accrualRate": 1.583333,
     "role": "Manager",
-    "password": "Lauren15"
+    "email": ""
   },
   {
     "id": 19,
@@ -1073,7 +1077,7 @@ let allData = [
     "baseAvailable": 10.5,
     "accrualRate": 2,
     "role": "Staff",
-    "password": "Lawrence16"
+    "email": ""
   },
   {
     "id": 20,
@@ -1086,7 +1090,7 @@ let allData = [
     "baseAvailable": 8.492231964313248,
     "accrualRate": 1.666666,
     "role": "Staff",
-    "password": "Lindelwa17"
+    "email": ""
   },
   {
     "id": 21,
@@ -1099,7 +1103,7 @@ let allData = [
     "baseAvailable": 11.1666666666667,
     "accrualRate": 1.666666,
     "role": "Manager",
-    "password": "Matthew18"
+    "email": ""
   },
   {
     "id": 22,
@@ -1112,7 +1116,7 @@ let allData = [
     "baseAvailable": 16.66666666666663,
     "accrualRate": 1.916666,
     "role": "Manager",
-    "password": "Melanie19"
+    "email": ""
   },
   {
     "id": 23,
@@ -1125,7 +1129,7 @@ let allData = [
     "baseAvailable": 16.411764705882376,
     "accrualRate": 1.833333,
     "role": "Manager",
-    "password": "Micaela20"
+    "email": ""
   },
   {
     "id": 24,
@@ -1138,7 +1142,7 @@ let allData = [
     "baseAvailable": 1.5,
     "accrualRate": 1.333333,
     "role": "Staff",
-    "password": "Milano28"
+    "email": ""
   },
   {
     "id": 25,
@@ -1151,7 +1155,7 @@ let allData = [
     "baseAvailable": 5.166666666666666,
     "accrualRate": 1.333333,
     "role": "Staff",
-    "password": "Pieter22"
+    "email": ""
   },
   {
     "id": 26,
@@ -1164,7 +1168,7 @@ let allData = [
     "baseAvailable": 1.916666666666785,
     "accrualRate": 0.958333,
     "role": "Staff",
-    "password": "Sarah23"
+    "email": ""
   },
   {
     "id": 27,
@@ -1177,7 +1181,7 @@ let allData = [
     "baseAvailable": 10.6666666666667,
     "accrualRate": 1.583333,
     "role": "Staff",
-    "password": "Simon24"
+    "email": ""
   },
   {
     "id": 28,
@@ -1190,7 +1194,7 @@ let allData = [
     "baseAvailable": 3.5,
     "accrualRate": 1.333333,
     "role": "Staff",
-    "password": "Stefan25"
+    "email": ""
   },
   {
     "id": 29,
@@ -1203,7 +1207,7 @@ let allData = [
     "baseAvailable": 5.333333333333343,
     "accrualRate": 1.416666,
     "role": "Staff",
-    "password": "Verné26"
+    "email": ""
   },
   {
     "id": 30,
@@ -1216,7 +1220,7 @@ let allData = [
     "baseAvailable": 10.666666666666686,
     "accrualRate": 1.583333,
     "role": "Staff",
-    "password": "Wade27"
+    "email": ""
   }
 ];
 
@@ -1225,7 +1229,7 @@ let currentUser = null;
 let filterText  = '';
 let sortField   = null;
 let sortDir     = 1;
-let dataIsReal  = allData.length > 0 && allData.some(r => r.staffName && r.password);
+let dataIsReal  = allData.length > 0 && allData.some(r => r.staffName && r.email);
 
 // ─── HELPERS ───────────────────────────────────────────────────────────────────
 function normRole(r) {
@@ -1279,34 +1283,146 @@ function resetAccumulatedDate(id) {
   renderTable();
 }
 
-// ─── AUTH ──────────────────────────────────────────────────────────────────────
-function doLogin() {
-  const name  = document.getElementById('login-name').value.trim();
-  const pass  = document.getElementById('login-pass').value;
-  const err   = document.getElementById('login-error');
-  const match = allData.find(r => r.staffName.toLowerCase()===name.toLowerCase() && r.password===pass);
-  if (!match) { err.textContent='Name or password incorrect. Please try again.'; return; }
-  err.textContent = '';
-  currentUser = match;
-  dataIsReal = true; // real data confirmed — hide setup bypass
-  document.getElementById('setup-bypass').style.display='none';
-  showApp();
+// ─── AUTH (Entra ID via Azure Static Web Apps /.auth/me) ───────────────────────
+
+// Called on page load — checks if Azure has already authenticated the user
+async function initAuth() {
+  try {
+    const res = await fetch('/.auth/me');
+    if (!res.ok) throw new Error('auth endpoint not available');
+    const payload = await res.json();
+    const principal = payload.clientPrincipal;
+
+    if (!principal) {
+      // Not signed in — show the Microsoft sign-in button
+      showLoginButton();
+      return;
+    }
+
+    // Signed in — pull the shared server data (if any) before checking who they are.
+    try {
+      const dataRes = await fetch('/api/leave-data');
+      if (dataRes.ok) {
+        const serverPayload = await dataRes.json();
+        if (Array.isArray(serverPayload.data) && serverPayload.data.length > 0) {
+          allData = serverPayload.data;
+          dataIsReal = allData.some(r => r.staffName && r.email);
+        }
+        // If serverPayload.data is empty, leave allData/dataIsReal as the placeholder
+        // defaults — that keeps the first-run Admin bypass active until someone imports.
+      }
+    } catch (fetchErr) {
+      console.warn('Could not load shared leave data, using local placeholder:', fetchErr.message);
+    }
+
+    // Match their identity to the staff list
+    const email = principal.userDetails.toLowerCase(); // e.g. "john.smith@company.com"
+    const claims = principal.claims || [];
+
+    // Check for Admin/Manager via Entra group claims (optional — falls back to Excel role)
+    // Group names must match exactly what's configured in your App Registration
+    const groupAdmin   = claims.some(c => c.typ === 'groups' && c.val === 'Leave-Admins');
+    const groupManager = claims.some(c => c.typ === 'groups' && c.val === 'Leave-Managers');
+
+    const match = allData.find(r =>
+      r.email && r.email.toLowerCase() === email
+    );
+
+    // FIRST-RUN BYPASS: no real staff data has been imported yet (still placeholder/empty).
+    // Let any authenticated person in as Admin so they can do the initial Excel upload.
+    // This stops applying as soon as a real Excel file with emails has been imported,
+    // since dataIsReal becomes true and this branch is skipped from then on.
+    if (!dataIsReal && !match && !groupAdmin) {
+      currentUser = {
+        id: 0, staffName: principal.userDetails, email: email,
+        managerName: '', accumulatedDate: '', takenDate: '',
+        accrualRate: 0, role: 'Admin'
+      };
+      document.getElementById('setup-bypass').style.display = 'none';
+      showApp();
+      const notice = document.getElementById('setup-notice');
+      if (notice) notice.style.display = 'flex';
+      return;
+    }
+
+    if (!match && !groupAdmin) {
+      // Authenticated with Microsoft but not in the staff list
+      showError(`You're signed in as ${principal.userDetails} but not found in the staff list. Contact HR to be added.`);
+      showLoginButton(true);
+      return;
+    }
+
+    if (match) {
+      // Honour group-based role upgrades from Entra, otherwise keep Excel role
+      currentUser = { ...match };
+      if (groupAdmin)   currentUser.role = 'Admin';
+      if (groupManager && currentUser.role !== 'Admin') currentUser.role = 'Manager';
+    } else {
+      // Admin by group claim but not in staff list (e.g. IT admin)
+      currentUser = {
+        id: 0, staffName: principal.userDetails,
+        email: email, managerName: '', accumulatedDate: '',
+        takenDate: '', accrualRate: 0, role: 'Admin'
+      };
+    }
+
+    dataIsReal = true;
+    document.getElementById('setup-bypass').style.display = 'none';
+    showApp();
+
+  } catch (e) {
+    // /.auth/me not available — likely running locally without Azure
+    // Show the setup bypass so the developer can still work
+    console.warn('Entra auth not available (running locally?):', e.message);
+    document.getElementById('login-sub').textContent = 'Running in local / dev mode';
+    document.getElementById('login-spinner').style.display = 'none';
+    document.getElementById('login-error').textContent =
+      '⚠ Microsoft sign-in is only available when hosted on Azure Static Web Apps.';
+    document.getElementById('setup-bypass').style.display = 'block';
+  }
 }
+
+function showLoginButton(keepError) {
+  document.getElementById('login-sub').textContent = 'Sign in with your Microsoft work account';
+  document.getElementById('login-spinner').style.display = 'none';
+  document.getElementById('login-btn').style.display = 'block';
+  if (!keepError) document.getElementById('login-error').textContent = '';
+}
+
+function showError(msg) {
+  document.getElementById('login-error').textContent = msg;
+}
+
+function redirectToEntra() {
+  window.location.href = '/.auth/login/aad?post_login_redirect_uri=' + encodeURIComponent(window.location.pathname);
+}
+
 function enterSetupMode() {
-  currentUser = {id:0,staffName:'Admin',managerName:'',accumulatedDate:'',takenDate:'',accrualRate:0,role:'Admin',password:''};
+  currentUser = {id:0, staffName:'Admin', email:'', managerName:'', accumulatedDate:'', takenDate:'', accrualRate:0, role:'Admin'};
   showApp();
   document.getElementById('setup-notice').style.display='flex';
 }
+
 function signOut() {
-  currentUser=null; filterText=''; sortField=null; sortDir=1;
-  document.getElementById('login-name').value='';
-  document.getElementById('login-pass').value='';
-  document.getElementById('search-input').value='';
-  document.getElementById('setup-notice').style.display='none';
-  document.getElementById('setup-bypass').style.display=dataIsReal?'none':'block';
+  currentUser = null; filterText = ''; sortField = null; sortDir = 1;
+  document.getElementById('search-input').value = '';
+  document.getElementById('setup-notice').style.display = 'none';
   clearSortHeaders();
-  show('login-screen');
+  // Redirect to Entra sign-out when hosted; fall back to login screen locally
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    window.location.href = '/.auth/logout?post_logout_redirect_uri=' + encodeURIComponent(window.location.pathname);
+  } else {
+    document.getElementById('login-sub').textContent = 'Checking your sign-in status…';
+    document.getElementById('login-spinner').style.display = 'block';
+    document.getElementById('login-btn').style.display = 'none';
+    document.getElementById('login-error').textContent = '';
+    document.getElementById('setup-bypass').style.display = dataIsReal ? 'none' : 'block';
+    show('login-screen');
+  }
 }
+
+// Kick off auth check as soon as the page loads
+initAuth();
 
 // ─── APP SHELL ─────────────────────────────────────────────────────────────────
 function showApp() {
@@ -1320,6 +1436,7 @@ function showApp() {
   const isAdmin = role==='Admin';
   const isManager = role==='Manager';
   document.getElementById('import-btn').disabled              = !isAdmin;
+  document.getElementById('export-btn').style.display         = isAdmin ? 'flex' : 'none';
   document.getElementById('readonly-notice').style.display    = (isAdmin||isManager) ? 'none' : 'flex';
   const statsStrip = document.getElementById('stats-strip');
   if (statsStrip) statsStrip.style.display = (isAdmin||isManager) ? 'grid' : 'none';
@@ -1432,6 +1549,25 @@ document.addEventListener('click', e => {
 });
 
 // ─── EXPORT HTML ───────────────────────────────────────────────────────────────
+function exportHTML() {
+  const dataJSON = JSON.stringify(allData, null, 2);
+  // Clear transient UI state before capturing DOM so exports always start clean
+  const statusEl = document.getElementById('import-status');
+  const prevStatus = statusEl ? statusEl.textContent : '';
+  if (statusEl) statusEl.textContent = '';
+  let src = document.documentElement.outerHTML;
+  if (statusEl) statusEl.textContent = prevStatus; // restore for current session
+  src = src.replace(/let allData\s*=\s*\[[\s\S]*?\];/, 'let allData = '+dataJSON+';');
+  src = src.replace(/id="login-screen"[^>]*class="([^"]*)"/, m=>m.replace(/class="[^"]*"/,'class="screen active"'));
+  src = src.replace(/id="app-screen"[^>]*class="([^"]*)"/, m=>m.replace(/class="[^"]*"/,'class="screen"'));
+  const blob=new Blob([src],{type:'text/html'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='leave-management.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 // ─── EXCEL DATE PARSER ─────────────────────────────────────────────────────────
 function parseExcelDate(val) {
   if (!val && val!==0) return '';
@@ -1456,7 +1592,7 @@ const COL_MAP = {
   'leave taken until':'takenDate','leavetakenuntil':'takenDate','taken until':'takenDate',
   'available leave':'available','availableleave':'available',
   'accrual rate':'accrualRate','accrualrate':'accrualRate',
-  'role':'role','password':'password'
+  'role':'role','email':'email','email address':'email'
 };
 function normalizeRows(rows) {
   return rows.map((r,i)=>{
@@ -1466,9 +1602,10 @@ function normalizeRows(rows) {
     const avail=n.available!==undefined&&n.available!==''?parseFloat(n.available):null;
     return {
       id:i+1, staffName:String(n.staffName||'').trim(), managerName:String(n.managerName||'').trim(),
+      email:String(n.email||'').trim().toLowerCase(),
       accumulatedDate:accDate, baseAccumulatedDate:accDate, takenDate:parseExcelDate(n.takenDate),
       available:avail, baseAvailable:avail, accrualRate:parseFloat(n.accrualRate)||0,
-      role:normRole(n.role||'Staff'), password:String(n.password||'').trim()
+      role:normRole(n.role||'Staff')
     };
   }).filter(r=>r.staffName);
 }
@@ -1479,7 +1616,7 @@ function handleFile(e) {
   const status=document.getElementById('import-status');
   status.style.color='#7c8298'; status.textContent='Reading file…';
   const reader=new FileReader();
-  reader.onload=function(ev){
+  reader.onload=async function(ev){
     try {
       let rows;
       if(file.name.toLowerCase().endsWith('.csv')){
@@ -1499,7 +1636,25 @@ function handleFile(e) {
       document.getElementById('setup-bypass').style.display='none';
       document.getElementById('setup-notice').style.display='none';
       status.style.color='#2e8f62';
-      status.textContent=`Successfully imported ${imported.length} record${imported.length!==1?'s':''}. All views updated.`;
+      status.textContent=`Saving ${imported.length} record${imported.length!==1?'s':''} to the server…`;
+
+      // Persist to shared server storage so everyone sees this data, not just this browser session.
+      try {
+        const saveRes = await fetch('/api/leave-data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ data: allData })
+        });
+        if (!saveRes.ok) {
+          const errBody = await saveRes.json().catch(()=>({}));
+          throw new Error(errBody.error || `Server responded ${saveRes.status}`);
+        }
+        status.textContent=`Successfully imported and saved ${imported.length} record${imported.length!==1?'s':''}. Everyone will now see this data.`;
+      } catch (saveErr) {
+        status.style.color='#b8538a';
+        status.textContent=`Imported locally, but saving to the server failed: ${saveErr.message}. Others won't see this until it saves — try again.`;
+      }
+
       // Update "projected to" date in page header from the imported accumulatedDate
       const firstWithDate = imported.find(r=>r.accumulatedDate);
       if(firstWithDate && firstWithDate.accumulatedDate){
@@ -1511,8 +1666,9 @@ function handleFile(e) {
           pageSub.textContent = `Live balances for all employees · projected to ${formatted}`;
         }
       }
-      const stillValid=allData.find(r=>r.staffName.toLowerCase()===currentUser.staffName.toLowerCase()&&r.password===currentUser.password);
-      if(stillValid){currentUser=stillValid;renderTable();}
+      const stillValid=allData.find(r=>r.email && currentUser.email && r.email===currentUser.email.toLowerCase());
+      if(stillValid){currentUser={...stillValid};renderTable();}
+      else if(normRole(currentUser.role)==='Admin'){renderTable();} // IT/group-claim admins not in staff list
       else{status.textContent+=' Your account was not found in the new file — signing out.';setTimeout(signOut,2500);}
       e.target.value='';
     } catch(err){status.style.color='#b8538a';status.textContent='Error reading file: '+err.message;}
