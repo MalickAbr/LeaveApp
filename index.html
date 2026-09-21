@@ -339,10 +339,7 @@
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             Import Excel / CSV
           </button>
-          <button class="btn-outline" id="export-btn" onclick="exportHTML()" style="display: flex;">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-            Save as HTML
-          </button>
+
         </div>
       </div>
 
@@ -1436,7 +1433,6 @@ function showApp() {
   const isAdmin = role==='Admin';
   const isManager = role==='Manager';
   document.getElementById('import-btn').disabled              = !isAdmin;
-  document.getElementById('export-btn').style.display         = isAdmin ? 'flex' : 'none';
   document.getElementById('readonly-notice').style.display    = (isAdmin||isManager) ? 'none' : 'flex';
   const statsStrip = document.getElementById('stats-strip');
   if (statsStrip) statsStrip.style.display = (isAdmin||isManager) ? 'grid' : 'none';
@@ -1549,25 +1545,6 @@ document.addEventListener('click', e => {
 });
 
 // ─── EXPORT HTML ───────────────────────────────────────────────────────────────
-function exportHTML() {
-  const dataJSON = JSON.stringify(allData, null, 2);
-  // Clear transient UI state before capturing DOM so exports always start clean
-  const statusEl = document.getElementById('import-status');
-  const prevStatus = statusEl ? statusEl.textContent : '';
-  if (statusEl) statusEl.textContent = '';
-  let src = document.documentElement.outerHTML;
-  if (statusEl) statusEl.textContent = prevStatus; // restore for current session
-  src = src.replace(/let allData\s*=\s*\[[\s\S]*?\];/, 'let allData = '+dataJSON+';');
-  src = src.replace(/id="login-screen"[^>]*class="([^"]*)"/, m=>m.replace(/class="[^"]*"/,'class="screen active"'));
-  src = src.replace(/id="app-screen"[^>]*class="([^"]*)"/, m=>m.replace(/class="[^"]*"/,'class="screen"'));
-  const blob=new Blob([src],{type:'text/html'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='leave-management.html';
-  a.click();
-  URL.revokeObjectURL(a.href);
-}
-
 // ─── EXCEL DATE PARSER ─────────────────────────────────────────────────────────
 function parseExcelDate(val) {
   if (!val && val!==0) return '';
